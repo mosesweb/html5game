@@ -12,9 +12,15 @@ app.get('/', (req, res) => {
 });
 
 io.on('connection', (socket) => {
-  console.log('a user connected');
-});
+  console.log('connection');
+  socket.on('player pos', (msg) => {
+    console.log(msg)
+    console.log('player pos: ' + msg);
 
+    io.emit('allplayers', { someProperty: 'some value', otherProperty: 'other value' }); // This will emit the event to all connected sockets
+  });
+
+});
 server.listen(3330, () => {
   console.log('listening on *:3330');
 });

@@ -8,17 +8,23 @@ class MainGame {
   gameArea: GameArea
   myscore: GameComponent
   myGamePiece: GameCharacter
+  otherPlayer: GameCharacter
 
   myObstacles: GameComponent[] = [];
   keys: any = [];
   click: boolean = false;
   addedspecial: boolean = false;
+  ioClient = io("http://localhost:3330", { transports: ['websocket'] });
 
   constructor() {
     this.gameArea = new GameArea();
     this.myscore = new GameComponent("30px", "Consolas", "black", 280, 40, "text", this.gameArea);
     this.myGamePiece = new GameCharacter(30, 30, "red", 10, 120, "", this.gameArea);
     this.myGamePiece.gravity = 0;
+
+    this.otherPlayer = new GameCharacter(30, 30, "black", 10, 120, "", this.gameArea);
+
+
     console.log("main game")
     this.gameArea.down$.subscribe((d: boolean[]) => {
       this.keys = d;
@@ -75,6 +81,9 @@ class MainGame {
     this.myscore.update();
     this.myGamePiece.newPos();
     this.myGamePiece.update();
+    this.otherPlayer.update();
+    
+    this.ioClient.emit('player pos', {x: this.myGamePiece.x, y: this.myGamePiece.y});
 
     if (this.keys["KeyW"] || this.keys["KeyUp"]) {
       this.myGamePiece.speedY = -1;
@@ -271,11 +280,16 @@ class GameArea {
 function App() {
   const [count, setCount] = useState(0)
 
-  const socket = io();
-  const ioClient = io("http://localhost:3330", { transports: ['websocket'] });
-  ioClient.emit('player move', { map: 4, coords: '0.0' });
-  ioClient.on("seq-num", (msg: string) => console.info(msg));
+  var socket = io();
+  var ioClient = io("http://localhost:3330", { transports: ['websocket'] });
+
+  // ioClient.on("seq-num", (msg: string) => console.info(msg));
   useEffect(() => {
+    ioClient.on('allplayers', (msg) => {
+      console.log("all!!")
+      console.log(msg);
+    });
+
     var game: MainGame;
     game = new MainGame();
     game.start();
