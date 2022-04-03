@@ -40,3 +40,8 @@
 button {
   font-size: calc(10px + 2vmin);
 }
+
+canvas {
+  border:1px solid #d3d3d3;
+  background-color: #f1f1f1;
+}
