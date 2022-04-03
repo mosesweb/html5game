@@ -45,7 +45,7 @@ class MainGame {
   updateGameArea = () => {
     var x, height, gap, minHeight, maxHeight, minGap, maxGap;
     for (i = 0; i < this.myObstacles.filter(m => m.cancrash).length; i += 1) {
-      if (this.myGamePiece.crashWith(this.myObstacles[i])) {
+      if (this.myGamePiece.crashWith(this.myObstacles.filter(m => m.cancrash)[i])) {
         console.log("crash!")
         return;
       }
@@ -96,7 +96,7 @@ class MainGame {
         console.log("special!")
         this.myscore.text = "SCORaaaEaa: " + this.gameArea.frameNo;
         this.myscore.update();
-        this.myObstacles.push(new BallComponent(50, 50, "red", this.myGamePiece.x + 50, this.myGamePiece.y, "", this.gameArea));
+        this.myObstacles.push(new BallComponent(10, 10, "red", this.myGamePiece.x + 50, this.myGamePiece.y, "", this.gameArea));
         console.log(this.myObstacles)
         this.addedspecial = true;
       }
