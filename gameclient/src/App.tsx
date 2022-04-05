@@ -3,12 +3,16 @@ import logo from './logo.svg'
 import './App.css'
 import { io } from "socket.io-client";
 import { fromEvent, map, Observable, switchMap, takeUntil } from 'rxjs';
-
+class BackEndGameCharacter {
+  x: number = 0;
+  y: number = 0;
+  name: string = ""
+}
 class MainGame {
   gameArea: GameArea
   myscore: GameComponent
   myGamePiece: GameCharacter
-  otherPlayer: GameCharacter
+  otherPlayers: GameCharacter[] = []
 
   myObstacles: GameComponent[] = [];
   keys: any = [];
@@ -19,11 +23,42 @@ class MainGame {
   constructor() {
     this.gameArea = new GameArea();
     this.myscore = new GameComponent("30px", "Consolas", "black", 280, 40, "text", this.gameArea);
-    this.myGamePiece = new GameCharacter(30, 30, "red", 10, 120, "", this.gameArea);
+
+    // character connect
+    this.ioClient.emit("player connect", "hi");
+    this.ioClient.on("players location", (socketMessage: BackEndGameCharacter[]) => {
+
+      for (var i = 0; i < socketMessage.length; i++) {
+        //if(socketMessage.id)
+        let characterIndex = this.otherPlayers.findIndex(o => o.name == socketMessage[i].name);
+        if (characterIndex == -1) {
+          console.log("no find!")
+          console.log(socketMessage[i].name);
+
+          let character = new GameCharacter(30, 30, "black", Math.random() * 100, Math.random() * 100, "", this.gameArea);
+          character.name = socketMessage[i].name;
+          this.otherPlayers.push(character);
+        } else {
+          // If it is not this client (ourselves)
+          this.otherPlayers[characterIndex].x = socketMessage[i].x;
+          this.otherPlayers[characterIndex].y = socketMessage[i].y;
+
+          const usIndex = this.otherPlayers.findIndex(o => o.name == this.ioClient.id)
+          if (usIndex !== -1) {
+            this.otherPlayers[usIndex].isUs = true
+          }
+        }
+      }
+    })
+    this.ioClient.on("player disconnected", (socketId: string) => {
+      let characterIndex = this.otherPlayers.findIndex(o => o.name == socketId);
+      if (characterIndex !== -1) {
+        this.otherPlayers.splice(characterIndex, 1);
+      }
+    });
+
+    this.myGamePiece = new GameCharacter(30, 30, "green", 0, 0, "", this.gameArea);
     this.myGamePiece.gravity = 0;
-
-    this.otherPlayer = new GameCharacter(30, 30, "black", 10, 120, "", this.gameArea);
-
 
     console.log("main game")
     this.gameArea.down$.subscribe((d: boolean[]) => {
@@ -39,8 +74,6 @@ class MainGame {
     this.gameArea.clickdown$.subscribe((d: boolean) => {
       this.click = false;
     });
-
-
   }
   clearmove() {
     this.myGamePiece.speedX = 0;
@@ -68,22 +101,28 @@ class MainGame {
       gap = Math.floor(Math.random() * (maxGap - minGap + 1) + minGap);
       this.myObstacles.push(new GameComponent(10, height, "green", x, 0, "", this.gameArea));
       this.myObstacles.push(new GameComponent(10, x - height - gap, "green", x, height + gap, "", this.gameArea));
-      console.log("here..")
+      console.log("emitting ..")
+
+
     }
     for (var i = 0; i < this.myObstacles.length; i += 1) {
       if (this.myObstacles[i].cancrash)
         this.myObstacles[i].x += -1; // move obstacle x <--
       this.myObstacles[i].update();
     }
-    this.scoretext = "score (" + this.myObstacles.length + ") "
+    this.scoretext = "score (" + this.otherPlayers.filter(o => o.isUs).length + ") "
 
     this.myscore.text = this.scoretext + this.gameArea.frameNo;
     this.myscore.update();
     this.myGamePiece.newPos();
     this.myGamePiece.update();
-    this.otherPlayer.update();
-    
-    this.ioClient.emit('player pos', {x: this.myGamePiece.x, y: this.myGamePiece.y});
+
+    this.ioClient.emit('player pos', this.myGamePiece); // move to faster interval
+
+    this.otherPlayers.forEach(o => {
+      if (!o.isUs)
+        o.update();
+    })
 
     if (this.keys["KeyW"] || this.keys["KeyUp"]) {
       this.myGamePiece.speedY = -1;
@@ -206,6 +245,9 @@ class GameComponent {
   }
 }
 class GameCharacter extends GameComponent {
+  name: string = "";
+  isUs: boolean = false;
+
   accelerate = (n) => {
     this.gravity = n;
     return;
@@ -280,19 +322,11 @@ class GameArea {
 function App() {
   const [count, setCount] = useState(0)
 
-  var socket = io();
-  var ioClient = io("http://localhost:3330", { transports: ['websocket'] });
-
-  // ioClient.on("seq-num", (msg: string) => console.info(msg));
   useEffect(() => {
-    ioClient.on('allplayers', (msg) => {
-      console.log("all!!")
-      console.log(msg);
-    });
-
     var game: MainGame;
     game = new MainGame();
     game.start();
+    console.log("ONCE")
   }, []);
 
   return (
