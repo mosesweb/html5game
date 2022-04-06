@@ -3,6 +3,7 @@ import logo from './logo.svg'
 import './App.css'
 import { io } from "socket.io-client";
 import { fromEvent, map, Observable, switchMap, takeUntil } from 'rxjs';
+import React from 'react';
 class BackEndGameCharacter {
   x: number = 0;
   y: number = 0;
@@ -90,6 +91,7 @@ class MainGame {
       }
     }
     this.gameArea.clear();
+    this.gameArea.setBg();
     this.gameArea.frameNo += 1;
     if (this.gameArea.frameNo == 1 || this.everyinterval(150)) {
       x = this.gameArea.canvas.width;
@@ -101,10 +103,8 @@ class MainGame {
       gap = Math.floor(Math.random() * (maxGap - minGap + 1) + minGap);
       this.myObstacles.push(new GameComponent(10, height, "green", x, 0, "", this.gameArea));
       this.myObstacles.push(new GameComponent(10, x - height - gap, "green", x, height + gap, "", this.gameArea));
-      console.log("emitting ..")
-
-
     }
+
     for (var i = 0; i < this.myObstacles.length; i += 1) {
       if (this.myObstacles[i].cancrash)
         this.myObstacles[i].x += -1; // move obstacle x <--
@@ -149,12 +149,6 @@ class MainGame {
         this.addedspecial = true;
       }
     }
-    // on click
-    if (this.click) {
-      if (!this.addedspecial) {
-
-      }
-    }
   }
 
   everyinterval = (n: any) => {
@@ -163,7 +157,6 @@ class MainGame {
   }
 
   start = () => {
-
     document.body.insertBefore(this.gameArea.canvas, document.body.childNodes[0]);
     this.gameArea.frameNo = 0;
     this.gameArea.interval = setInterval(this.updateGameArea, 20);
@@ -181,12 +174,15 @@ class GameComponent {
   y: any
   gravity: any
   gravitySpeed: any
-  ctx: any;
+  ctx: CanvasRenderingContext2D;
   color: any;
   text: string = "score"
   cancrash: boolean = true;
 
   gamearea: GameArea
+
+
+
 
   constructor(width: any, height: any, color: any, x: any, y: any, type: any, gamearea: GameArea) {
     this.type = type;
@@ -201,10 +197,10 @@ class GameComponent {
     this.gravitySpeed = 0;
     this.color = color;
     this.gamearea = gamearea
+    this.ctx = this.gamearea.context as CanvasRenderingContext2D;
   }
 
   update = () => {
-    this.ctx = this.gamearea.context;
     if (this.type == "text") {
       this.ctx.font = this.width + " " + this.height;
       this.ctx.fillStyle = this.color;
@@ -247,32 +243,38 @@ class GameComponent {
 class GameCharacter extends GameComponent {
   name: string = "";
   isUs: boolean = false;
+  image: HTMLImageElement;
+
+  constructor(width: any, height: any, color: any, x: any, y: any, type: any, gamearea: GameArea) {
+    super(width, height, color, x, y, type, gamearea);
+    this.image = new Image();
+    this.image.src = "src/img/smiley.gif";
+  }
+  update = () => {
+    this.ctx.fillStyle = this.color;
+    // this.ctx.fillRect(this.x, this.y, this.width, this.height);
+    this.ctx.drawImage(this.image, this.x, this.y, this.width, this.height)
+  }
 
   accelerate = (n) => {
     this.gravity = n;
     return;
   }
 }
-
 class BallComponent extends GameComponent {
   cancrash = false;
   update = () => {
     this.x += 1; // move obstacle x -->
-    this.ctx = this.gamearea.context;
-    if (this.type == "text") {
-      this.ctx.font = this.width + " " + this.height;
-      this.ctx.fillStyle = this.color;
-      this.ctx.fillText(this.text, this.x, this.y);
-    } else {
-      this.ctx.fillStyle = this.color;
-      this.ctx.fillRect(this.x, this.y, this.width, this.height);
-    }
+    this.ctx = this.gamearea.context as CanvasRenderingContext2D;
+
+    this.ctx.fillStyle = this.color;
+    this.ctx.fillRect(this.x, this.y, this.width, this.height);
   }
 }
 
 class GameArea {
   canvas: HTMLCanvasElement
-  context: any
+  context: CanvasRenderingContext2D
   frameNo: any
   interval: any
   key: string = ""
@@ -282,11 +284,33 @@ class GameArea {
 
   clickdown$: Observable<boolean>
   clickup$: Observable<boolean>
+  canvasChild: HTMLCanvasElement;
+  background: HTMLImageElement;
+  // contextChild: CanvasRenderingContext2D;
 
   constructor() {
-    this.canvas = document.createElement("canvas");
+    // this.canvas = getCanvasElementById("gamecanvas")
+    this.canvas = document.createElement("canvas") as HTMLCanvasElement;
+    this.canvas.id = "bg"
+
+    this.canvasChild = document.createElement("canvas") as HTMLCanvasElement;
+    this.canvasChild.id = "game"
+    //  this.canvas.appendChild(this.canvasChild);
+    console.log(this.canvas);
     this.canvas.width = 1680;
-    this.canvas.height = 570; this.context = this.canvas.getContext("2d");
+    this.canvas.height = 570;
+
+    this.context = this.canvas.getContext("2d") as CanvasRenderingContext2D;
+
+    // this.contextChild = this.canvasChild.getContext("2d") as CanvasRenderingContext2D;
+
+    // this.contextChild.fillRect(10, 10, 100, 100)
+
+    this.background = new Image();
+    this.background.src = "src/img/grass.png";
+    this.background.onload = () => {
+
+    }
 
     this.down$ = fromEvent(document, 'keydown', (e: any) => {
       if (e.repeat) return this.keys;
@@ -306,6 +330,18 @@ class GameArea {
     this.clickup$ = fromEvent(document, 'mouseup', (e: any) => {
       return false;
     });
+  }
+
+  setBg = () => {
+    // for color
+    // this.context.fillStyle = "blue";
+    // this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
+    // for single image this.context.drawImage(this.background, 0, 0, this.canvas.width, this.canvas.height);
+    const pattern = this.context.createPattern(this.background, 'repeat');
+    this.context.fillStyle = pattern as CanvasPattern;
+    this.context.fillRect(0, 0, this.canvas.width, this.canvas.height); // context.fillRect(x, y, width, height);
+
+
   }
 
   clear = () => {
@@ -332,6 +368,7 @@ function App() {
   return (
     <div className="App">
       <header >
+        {/* <canvas width={1680} id="gamecanvas"></canvas> */}
         <p>
           <a
             className="App-link"

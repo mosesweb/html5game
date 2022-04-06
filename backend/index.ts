@@ -50,7 +50,6 @@ io.on('connection', (socket: Socket) => {
     players.splice(players.findIndex(p => p.name == socket.id), 1)
     io.emit('players location', players);
     io.emit('player disconnected', disconnectedId);
-
   });
 
 });
