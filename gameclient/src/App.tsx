@@ -136,10 +136,14 @@ class MainGame {
     if (this.keys["KeyA"] || this.keys["KeyLeft"]) {
       this.myGamePiece.speedX = -1;
     }
+    if (this.myGamePiece.speedX != 0 || this.myGamePiece.speedY != 0) {
+      this.myGamePiece.isWalking = true;
+    }
+    else
+      this.myGamePiece.isWalking = false;
+      
     if (this.keys["Space"]) {
       {
-        //this.myGamePiece.speedX = 19;
-
         console.log(this.myObstacles)
         console.log("special!")
         this.myscore.text = "SCORaaaEaa: " + this.gameArea.frameNo;
@@ -243,6 +247,7 @@ class GameComponent {
 class GameCharacter extends GameComponent {
   name: string = "";
   isUs: boolean = false;
+  isWalking: boolean = false;
   image: HTMLImageElement;
 
   constructor(width: any, height: any, color: any, x: any, y: any, type: any, gamearea: GameArea) {
@@ -253,6 +258,11 @@ class GameCharacter extends GameComponent {
   update = () => {
     this.ctx.fillStyle = this.color;
     // this.ctx.fillRect(this.x, this.y, this.width, this.height);
+    if (this.isWalking)
+      this.image.src = "src/img/angry.gif";
+    else
+      this.image.src = "src/img/smiley.gif";
+
     this.ctx.drawImage(this.image, this.x, this.y, this.width, this.height)
   }
 
