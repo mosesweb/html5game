@@ -11,7 +11,9 @@ const cors = require('cors')
 class GameCharacter {
   x: number = 0;
   y: number = 0;
-  name: string = ""
+  name: string = "";
+  imagesrc: string = "";
+  isWalking: boolean = false;
 }
 
 var players: GameCharacter[] = [];
@@ -39,6 +41,8 @@ io.on('connection', (socket: Socket) => {
       const updatedPlayer: GameCharacter = players[playerIndex]
       updatedPlayer.x = msg.x
       updatedPlayer.y = msg.y
+      updatedPlayer.imagesrc = msg.imagesrc
+      updatedPlayer.isWalking = msg.isWalking
       players[playerIndex] = updatedPlayer;
     }
     io.emit('players location', players);
@@ -51,7 +55,6 @@ io.on('connection', (socket: Socket) => {
     io.emit('players location', players);
     io.emit('player disconnected', disconnectedId);
   });
-
 });
 server.listen(3330, () => {
   console.log('listening on *:3330');

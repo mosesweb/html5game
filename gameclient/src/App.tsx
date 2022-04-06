@@ -8,6 +8,8 @@ class BackEndGameCharacter {
   x: number = 0;
   y: number = 0;
   name: string = ""
+  imagesrc: string = "";
+  isWalking: boolean = false;
 }
 class MainGame {
   gameArea: GameArea
@@ -40,9 +42,12 @@ class MainGame {
           character.name = socketMessage[i].name;
           this.otherPlayers.push(character);
         } else {
-          // If it is not this client (ourselves)
+          // client found in list of players
           this.otherPlayers[characterIndex].x = socketMessage[i].x;
           this.otherPlayers[characterIndex].y = socketMessage[i].y;
+          this.otherPlayers[characterIndex].image.src = socketMessage[i].imagesrc;
+          this.otherPlayers[characterIndex].isWalking = socketMessage[i].isWalking;
+
 
           const usIndex = this.otherPlayers.findIndex(o => o.name == this.ioClient.id)
           if (usIndex !== -1) {
@@ -141,7 +146,7 @@ class MainGame {
     }
     else
       this.myGamePiece.isWalking = false;
-      
+
     if (this.keys["Space"]) {
       {
         console.log(this.myObstacles)
@@ -249,11 +254,13 @@ class GameCharacter extends GameComponent {
   isUs: boolean = false;
   isWalking: boolean = false;
   image: HTMLImageElement;
+  imagesrc: string;
 
   constructor(width: any, height: any, color: any, x: any, y: any, type: any, gamearea: GameArea) {
     super(width, height, color, x, y, type, gamearea);
     this.image = new Image();
     this.image.src = "src/img/smiley.gif";
+    this.imagesrc = "src/img/smiley.gif";
   }
   update = () => {
     this.ctx.fillStyle = this.color;
@@ -263,6 +270,7 @@ class GameCharacter extends GameComponent {
     else
       this.image.src = "src/img/smiley.gif";
 
+    this.imagesrc = this.image.src;
     this.ctx.drawImage(this.image, this.x, this.y, this.width, this.height)
   }
 
@@ -294,7 +302,6 @@ class GameArea {
 
   clickdown$: Observable<boolean>
   clickup$: Observable<boolean>
-  canvasChild: HTMLCanvasElement;
   background: HTMLImageElement;
   // contextChild: CanvasRenderingContext2D;
 
@@ -303,25 +310,14 @@ class GameArea {
     this.canvas = document.createElement("canvas") as HTMLCanvasElement;
     this.canvas.id = "bg"
 
-    this.canvasChild = document.createElement("canvas") as HTMLCanvasElement;
-    this.canvasChild.id = "game"
-    //  this.canvas.appendChild(this.canvasChild);
     console.log(this.canvas);
     this.canvas.width = 1680;
     this.canvas.height = 570;
 
     this.context = this.canvas.getContext("2d") as CanvasRenderingContext2D;
-
-    // this.contextChild = this.canvasChild.getContext("2d") as CanvasRenderingContext2D;
-
-    // this.contextChild.fillRect(10, 10, 100, 100)
-
     this.background = new Image();
     this.background.src = "src/img/grass.png";
-    this.background.onload = () => {
-
-    }
-
+  
     this.down$ = fromEvent(document, 'keydown', (e: any) => {
       if (e.repeat) return this.keys;
       this.keys[e.code] = true;
@@ -350,8 +346,6 @@ class GameArea {
     const pattern = this.context.createPattern(this.background, 'repeat');
     this.context.fillStyle = pattern as CanvasPattern;
     this.context.fillRect(0, 0, this.canvas.width, this.canvas.height); // context.fillRect(x, y, width, height);
-
-
   }
 
   clear = () => {
