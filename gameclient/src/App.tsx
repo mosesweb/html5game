@@ -4,6 +4,7 @@ import './App.css'
 import { io } from "socket.io-client";
 import { fromEvent, map, Observable, switchMap, takeUntil } from 'rxjs';
 import React from 'react';
+import { MoveStatus } from './models/MoveStatus';
 class BackEndGameCharacter {
   x: number = 0;
   y: number = 0;
@@ -73,7 +74,6 @@ class MainGame {
         {
           console.log(this.myObstacles)
           console.log("special!")
-          this.myscore.text = "SCORaaaEaa: " + this.gameArea.frameNo;
           this.myscore.update();
           this.myGamePiece.ballsShooted++;
           console.log(this.myGamePiece.ballsShooted);
@@ -98,6 +98,7 @@ class MainGame {
   clearmove() {
     this.myGamePiece.speedX = 0;
     this.myGamePiece.speedY = 0;
+    this.myGamePiece.moveForward = false;
   }
 
   scoretext: string = "score ";
@@ -114,7 +115,7 @@ class MainGame {
           console.log("crash!")
           this.myObstacles.filter(m => m.cancrash)[i].color = "yellow"
           const ballIndex = this.myObstacles.findIndex(m => m == balls[ballThatHit])
-          if(ballIndex !== -1)
+          if (ballIndex !== -1)
             this.myObstacles[ballIndex].color = "yellow";
           this.myObstacles = this.myObstacles.filter(m => m.color != "yellow"); // can be improved
         }
@@ -149,7 +150,7 @@ class MainGame {
         this.myObstacles[i].x += -1; // move obstacle x <--
       this.myObstacles[i].update();
     }
-    this.scoretext = "score (" + this.otherPlayers.filter(o => o.isUs).length + ") "
+    this.scoretext = "score (" + this.otherPlayers.filter(o => o.isUs).length + ") " + this.myGamePiece.movingStatus.toString()
 
     this.myscore.text = this.scoretext + this.gameArea.frameNo;
     this.myscore.update();
@@ -213,6 +214,12 @@ class GameComponent {
   cancrash: boolean = true;
   canCrush: boolean = false;
   gamearea: GameArea
+  moveForward: boolean = false;
+  movingStatus: MoveStatus = MoveStatus.Idle
+  moveUp: boolean = false;
+  moveDown: boolean = false;
+;
+  moveBackward: boolean = false;;
 
   constructor(width: any, height: any, color: any, x: any, y: any, type: any, gamearea: GameArea) {
     this.type = type;
@@ -244,6 +251,23 @@ class GameComponent {
     this.gravitySpeed += this.gravity;
     this.x += this.speedX;
     this.y += this.speedY + this.gravitySpeed;
+
+    if (this.speedX > 0) {
+      this.moveForward = true;
+      this.movingStatus = MoveStatus.WalkingRight
+    }
+    if (this.speedX < 0) {
+      this.moveBackward = true;
+      this.movingStatus = MoveStatus.WalkingLeft
+    }
+    if (this.speedY < 0) {
+      this.moveUp = true;
+      this.movingStatus = MoveStatus.WalkingUp
+    }
+    if (this.speedY > 0) {
+      this.moveDown = true;
+      this.movingStatus = MoveStatus.WalkingDown
+    }
     this.hitBottom();
   }
 
@@ -327,7 +351,6 @@ class BallComponent extends GameComponent {
     }
     return crash;
   }
-
 }
 
 class GameArea {
