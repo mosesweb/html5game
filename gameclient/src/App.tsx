@@ -246,16 +246,16 @@ class MainGame {
     })
 
     if (this.keys["KeyW"] || this.keys["KeyUp"]) {
-      this.myGamePiece.speedY = -1;
+      this.myGamePiece.speedY = -2;
     }
     if (this.keys["KeyD"] || this.keys["KeyRight"]) {
-      this.myGamePiece.speedX = 1;
+      this.myGamePiece.speedX = 2;
     }
     if (this.keys["KeyS"] || this.keys["KeyDown"]) {
-      this.myGamePiece.speedY = 1;
+      this.myGamePiece.speedY = 2;
     }
     if (this.keys["KeyA"] || this.keys["KeyLeft"]) {
-      this.myGamePiece.speedX = -1;
+      this.myGamePiece.speedX = -2;
     }
     if (this.myGamePiece.speedX != 0 || this.myGamePiece.speedY != 0) {
       this.myGamePiece.isWalking = true;
