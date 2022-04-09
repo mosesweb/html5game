@@ -43,8 +43,8 @@ class MainGame {
 
     console.log("create")
     //this.mySpaceships.push(new SpaceShipComponent(10, 50, "white", 1550, Math.random() * this.gameArea.canvas.height, "", this.gameArea));
-    
-    this.mySpaceships$.next(new SpaceShipComponent(10, 50, "white", Math.random() * this.gameArea.canvas.width, Math.random() * this.gameArea.canvas.height, "", this.gameArea));
+
+    this.mySpaceships$.next(new SpaceShipComponent(50, 50, "white", Math.random() * this.gameArea.canvas.width, Math.random() * this.gameArea.canvas.height, "", this.gameArea));
 
   }
 
@@ -155,7 +155,7 @@ class MainGame {
   scoretext: string = "score ";
   gameover = false;
   updateGameArea = () => {
-    if(this.gameover)
+    if (this.gameover)
       return;
 
     var x, height, gap, minHeight, maxHeight, minGap, maxGap;
@@ -169,35 +169,35 @@ class MainGame {
         const ballThatHitSpaceShip = balls.filter(b => !b.isNpc).findIndex(b => b.crashWith(this.mySpaceships[i]));
         if (ballThatHitSpaceShip !== -1) {
           console.log("crash!")
-          this.mySpaceships.filter(m => m.canCrash)[i].color = "yellow"
+          this.mySpaceships.filter(m => m.canCrash)[i].isDead = true
           const ballIndex = this.mySpaceships.findIndex(m => m == balls.filter(b => b.isNpc)[ballThatHitSpaceShip])
 
           // remove yellow marked (damanged) obstacles
-         this.mySpaceships = this.mySpaceships.filter(m => m.color != "yellow"); // can be improved
+          this.mySpaceships = this.mySpaceships.filter(m => !m.isDead); // can be improved
         }
       }
 
       // we crash with spaceship
       let group = this.mySpaceships
-      group.forEach(g  => {
-        if(this.myGamePiece.crashWith(g)) {
+      group.forEach(g => {
+        if (this.myGamePiece.crashWith(g)) {
           g.color = "purple"
           console.log("game over!")
-          this.gameover= true;
+          this.gameover = true;
           return;
         }
       });
       // we shot them..
       let group2 = this.myObstacles.filter(m => m.isNpc)
-      group2.forEach(g  => {
-        if(this.myGamePiece.crashWith(g)) {
+      group2.forEach(g => {
+        if (this.myGamePiece.crashWith(g)) {
           g.color = "purple"
           console.log("game over!")
-          this.gameover= true;
+          this.gameover = true;
           return;
         }
       });
-      
+
     }
 
     this.gameArea.clear();
@@ -412,21 +412,23 @@ class SpaceShipComponent extends GameComponent {
   imagesrc: string;
   balls: BallComponent[] = [];
   balls$: Subject<BallComponent> = new Subject<BallComponent>();
+  isDead = false;
   constructor(width: any, height: any, color: any, x: any, y: any, type: any, gamearea: GameArea) {
     super(width, height, color, x, y, type, gamearea);
     this.image = new Image();
-    this.image.src = "src/img/16425.gif";
-    this.imagesrc = "src/img/16425.gif";
+    this.image.src = "src/img/spaces1.png";
+    this.imagesrc = "src/img/spaces1.png";
 
   }
   shootBall() {
-    const timer = interval(1000).pipe(take(4));
+    const timer = interval(1000)
     const sequence = range(1, 10);
     const result = concat(timer, sequence);
     result.subscribe(x => {
       console.log(x + " x...");
-     this.balls.push(new BallComponent(10, 10, "green", this.x, this.y, "", this.gamearea, this.width, MoveStatus.WalkingLeft, true));
-     this.balls$.next(new BallComponent(10, 10, "green", this.x, this.y, "", this.gamearea, this.width, MoveStatus.WalkingLeft, true));
+      if (this.isDead) return;
+      this.balls.push(new BallComponent(10, 10, "green", this.x, this.y, "", this.gamearea, this.width, MoveStatus.WalkingLeft, true));
+      this.balls$.next(new BallComponent(10, 10, "green", this.x, this.y, "", this.gamearea, this.width, MoveStatus.WalkingLeft, true));
     });
   }
 
@@ -444,7 +446,7 @@ class SpaceShipComponent extends GameComponent {
     this.ctx.fillStyle = this.color;
     this.imagesrc = this.image.src;
     this.ctx.drawImage(this.image, this.x, this.y, this.width, this.height)
-    this.ctx.fillRect(this.x, this.y, this.width, this.height);
+    //this.ctx.fillRect(this.x, this.y, this.width, this.height);
   }
 }
 
