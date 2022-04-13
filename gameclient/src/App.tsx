@@ -23,6 +23,7 @@ class MainGame {
   myObstacles: GameComponent[] = [];
   mySpaceships: SpaceShipComponent[] = [];
   mySpaceships$: Subject<SpaceShipComponent> = new Subject<SpaceShipComponent>();
+  deadSpaceShips: number = 0;
 
 
   keys: any = [];
@@ -50,7 +51,7 @@ class MainGame {
 
   constructor() {
     this.gameArea = new GameArea();
-    this.myscore = new GameComponent("30px", "Consolas", "white", 280, 40, "text", this.gameArea);
+    this.myscore = new GameComponent("30px", "Consolas", "green", 280, 40, "text", this.gameArea);
 
     // character connect
     this.ioClient.emit("player connect", "hi");
@@ -63,7 +64,7 @@ class MainGame {
           console.log("no find!")
           console.log(socketMessage[i]);
 
-          let character = new GameCharacter(30, 30, "black", 0, 0, "", this.gameArea);
+          let character = new GameCharacter(30, 30, "orange", 0, 0, "", this.gameArea);
           character.name = socketMessage[i].name;
           this.otherPlayers.push(character);
         } else {
@@ -102,7 +103,7 @@ class MainGame {
           this.myscore.update();
           this.myGamePiece.ballsShooted++;
           console.log(this.myGamePiece.ballsShooted);
-          this.myObstacles.push(new BallComponent(10, 10, "red", this.myGamePiece.x, this.myGamePiece.y, "", this.gameArea, this.myGamePiece.width, this.myGamePiece.movingStatus));
+          this.myObstacles.push(new BallComponent(10, 10, "green", this.myGamePiece.x, this.myGamePiece.y, "", this.gameArea, this.myGamePiece.width, this.myGamePiece.movingStatus));
           console.log(this.myObstacles)
           this.addedspecial = true;
         }
@@ -169,11 +170,13 @@ class MainGame {
         const ballThatHitSpaceShip = balls.filter(b => !b.isNpc).findIndex(b => b.crashWith(this.mySpaceships[i]));
         if (ballThatHitSpaceShip !== -1) {
           console.log("crash!")
-          this.mySpaceships.filter(m => m.canCrash)[i].isDead = true
+          this.mySpaceships.filter(m => m.canCrash)[i].isDead = true // set ship to dead
           const ballIndex = this.mySpaceships.findIndex(m => m == balls.filter(b => b.isNpc)[ballThatHitSpaceShip])
 
           // remove yellow marked (damanged) obstacles
+          this.deadSpaceShips++;
           this.mySpaceships = this.mySpaceships.filter(m => !m.isDead); // can be improved
+
         }
       }
 
@@ -214,7 +217,7 @@ class MainGame {
       maxGap = 200;
       gap = Math.floor(Math.random() * (maxGap - minGap + 1) + minGap);
 
-      this.myObstacles.push(new GameComponent(10, height, "green", x, 0, "", this.gameArea));
+      this.myObstacles.push(new GameComponent(10, height, "red", x, 0, "", this.gameArea));
       // this.myObstacles.push(new GameComponent(10, x - height - gap, "green", x, height + gap, "", this.gameArea));
 
 
@@ -231,9 +234,9 @@ class MainGame {
         this.mySpaceships[i].x += -1; // move obstacle x <--
       this.mySpaceships[i].update();
     }
-    this.scoretext = "score (" + this.otherPlayers.filter(o => o.isUs).length + ") " + this.myGamePiece.movingStatus.toString()
+    this.scoretext = "score (" + this.deadSpaceShips + ") " // + this.myGamePiece.movingStatus.toString()
 
-    this.myscore.text = this.scoretext + this.myObstacles.filter(m => m.canCrash || m.canCrush).length;
+    this.myscore.text = this.scoretext //+ this.myObstacles.filter(m => m.canCrash || m.canCrush).length;
     this.myscore.update();
     this.myGamePiece.newPos();
     this.myGamePiece.update();
@@ -383,19 +386,21 @@ class GameCharacter extends GameComponent {
   constructor(width: any, height: any, color: any, x: any, y: any, type: any, gamearea: GameArea) {
     super(width, height, color, x, y, type, gamearea);
     this.image = new Image();
-    this.image.src = "src/img/smiley.gif";
-    this.imagesrc = "src/img/smiley.gif";
+    this.image.src = "src/img/spaceship.gif";
+    
+    this.imagesrc = "src/img/spaceship.gif";
   }
 
   update = () => {
-    this.ctx.fillStyle = this.color;
+   // this.ctx.fillStyle = this.color;
     if (this.isWalking)
-      this.image.src = "src/img/angry.gif";
+      this.image.src = "src/img/spaceship.gif";
     else
-      this.image.src = "src/img/smiley.gif";
+      this.image.src = "src/img/spaceship.gif";
 
     this.imagesrc = this.image.src;
     this.ctx.drawImage(this.image, this.x, this.y, this.width, this.height)
+    this.ctx.imageSmoothingEnabled = false
   }
 
   accelerate = (n) => {
@@ -427,8 +432,8 @@ class SpaceShipComponent extends GameComponent {
     result.subscribe(x => {
       console.log(x + " x...");
       if (this.isDead) return;
-      this.balls.push(new BallComponent(10, 10, "green", this.x, this.y, "", this.gamearea, this.width, MoveStatus.WalkingLeft, true));
-      this.balls$.next(new BallComponent(10, 10, "green", this.x, this.y, "", this.gamearea, this.width, MoveStatus.WalkingLeft, true));
+      this.balls.push(new BallComponent(10, 10, "red", this.x, this.y, "", this.gamearea, this.width, MoveStatus.WalkingLeft, true));
+      this.balls$.next(new BallComponent(10, 10, "red", this.x, this.y, "", this.gamearea, this.width, MoveStatus.WalkingLeft, true));
     });
   }
 
